@@ -24,7 +24,7 @@ Accédez ensuite à votre serveur via [SSH](https://www.scaleway.com/en/docs/con
 - [docker](https://docs.docker.com/engine/install/)
 - git (`apt install git`)
 
-## Lancer l'application en mode production
+## Lancer l'application en mode développement
 
 1 - Mettre en place l'environnement 
 
