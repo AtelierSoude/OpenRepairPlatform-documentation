@@ -3,177 +3,145 @@
 !!! warning "Ce guide est réservé aux développeurs-euses"
     Même si l'installation est simple, il est recommandé d'avoir quelques notions de programmation.
 
-Il existe plusieurs façons de créer votre propre instance. Que ce soit en local sur votre machine ou sur un serveur distant, ce guide présente une **installation à réaliser sur Linux**. Une installation sur Mac OS X est similaire mais nécessite quelques adaptations. Une installation sur un système Windows n'a pas été testée. 
 
-**Installation locale** :
-Pour une installation locale, installez l'application uniquement via [environnement virtuel](#mode-developpement-environnement-virtuel). 
+Cette application est encore en cours de développement. Toutes les contributions sont les bienvenues. Veuillez nous contacter si vous souhaitez contribuer et nous vous indiquerons comment procéder.
+
+OpenRepairPlatform est une application basée sur Django conçue pour organiser des structures de réparation collaborative. Elle offre des fonctionnalités de gestion organisationnelle, de publication d'événements, de gestion des membres de la communauté, de suivi des réparations et de partage.
+
+La plateforme a été créée par l'Atelier Soudé, une organisation qui répare les appareils électriques et électroniques des particuliers à Lyon, en France.
+
+
+**Installation locale** : 
+Pour une installation locale, installer l'application via docker compose
 
 **Installation sur un serveur distant** :
-En production, installez l'application uniquement en [mode production](#mode-production-docker-compose).
+En production, installez l'application uniquement en mode production.
 Vous devez louer ou créer votre serveur Linux. Pour plus de simplicité, nous recommandons d'utiliser 
 une instance Cloud. Par exemple chez [Scaleway](https://www.scaleway.com/fr/elements/). 
 Accédez ensuite à votre serveur via [SSH](https://www.scaleway.com/en/docs/configure-new-ssh-key/). 
 
+## Prérequis :
+- [docker](https://docs.docker.com/engine/install/)
+- git (`apt install git`)
 
-## Récupérer le dépôt
-Si vous n'avez pas *Git*
-```
-sudo apt install git
-```
+## Lancer l'application en mode production
 
-Puis
-```
+1 - Mettre en place l'environnement 
+
+```bash
 git clone https://github.com/AtelierSoude/OpenRepairPlatform.git
-```
-Entrez dans le dossier
-```
 cd OpenRepairPlatform
+touch .env
 ```
 
+2 - Modifier le fichier .env 
 
-## Variables d'environnement 
+```bash
+#Contenu par défaut du fichier .env
+# Activer la recherche de localisation sur la page d'accueil
+LOCATION=1
 
-Avant toute opération, renseignez les variables Django, Postgres et Nginx dans `openrepairplatform/.env` 
-
-```
-POSTGRES_USER=CHANGE_ME 
-POSTGRES_PASSWORD=CHANGE_ME
-POSTGRES_DB_NAME=CHANGE_ME
-
+# Paramètres DJANGO pour la configuration dev ou production 
 DJANGO_SETTINGS_MODULE=openrepairplatform.settings.dev
 SECRET_KEY=CHANGE_ME
 
+# Pour activer le mode debug, mettre la variable d'environement à True
+DEBUG=true
+PREPROD=True # !!! Pour empêcher les robots d'indexer. Changer à false en production
+
+#Paramètres de mail, uniquement en prod
 EMAIL_PASSWORD=CHANGE_ME
 EMAIL_HOST_USER=CHANGE_ME
 EMAIL_HOST=CHANGE_ME
+DEFAULT_FROM_EMAIL=no-reply@reparons.org
 
-DOMAIN_NAME=CHANGE_ME
-```
+# Paramètre let's encrypt et nginx
+#Le domaine principale que django va utiliser
+DOMAINDNS=dev.reparons.org
+# Hôtes autorisés et variables pour docker
+# Some autorised hosts and vars are added for docker implementation
+DOMAINS=localhost 127.0.0.1 [::1]
+EMAIL=contact@atelier-soude.fr
+SERVER_CONTAINER=openrepairplatform_nginx
 
-!!! danger "Attention"
-    En mode développement sous environnement virtuel, les variables **POSTGRES_USER, POSTGRES_PASSWORD & DOMAIN_NAME** ne sont pas utilisées. Rendez-vous à la section [Mode développement : Environnement Virtuel ](#mode-developpement-environnement-virtuel) pour savoir pourquoi
-
-Que signifient ces variables ?
-
-**Variables POSTGRES**
-```
-POSTGRES_USER: Nom d'utilisateur de la base de donnée POSTGRES.
-POSTGRES_PASSWORD: Mot de passe de l'utilisateur de la base de donnée POSTGRES.
-POSTGRES_DB_NAME: Nom de la base de donnée POSTGRES. 
-
-```
-
-**Variables DJANGO**
-```
-DJANGO_SETTINGS_MODULE: openr.....settings.dev ou .prod
-SECRET_KEY=CHANGE_ME: Renseignez une chaîne de caractère aléatoire 
+# Paramètre postgres
+POSTGRES_USER=openrepairplatform
+POSTGRES_DBNAME=openrepairplatform
+POSTGRES_PASSWORD=mangerdespommes
 ```
 
-**Variables d'e-mailing**
+3.Ajouter la valeur de `DOMAINDNS` a votre fichier de configuration host (optionnel)
 
-Des emails automatiques sont envoyés. Utilisez une adresse e-mail du type "no-reply@example.com"
-```
-EMAIL_PASSWORD: Le mot de passe de l'adresse email
-EMAIL_HOST_USER: L'adresse email ou le service d'envoi d'email
-DEFAULT_FROM_EMAIL: L'adresse e-mail expéditrice 
-EMAIL_HOST=CHANGE_ME: l'adresse IMAP utilisée 
-```
-**Variable NGINX**
-```
-DOMAIN_NAME: Le nom de votre domaine
+4.Lancer les commandes suivantes :
+
+```bash
+cd [git checkout directory]/
+docker compose up
 ```
 
-Après avoir renseigné ces variables, vous pourrez lancer votre instance en mode production ou développement. 
+Le site web est désormais déployé et accessible à l'adresse 127.0.0.1:8005 (ou http://[DOMAINDNS]).
+
+Par défaut, l'application de développement démarrera avec un serveur livereload, la surveillance automatique des fichiers django et la compilation automatique des fichiers vue.js.
+
+5.Créez une organisation dans le chemin « http://localhost:8005/admin » et vous pourrez démarrer tout le reste (une documentation plus complète sera fournie ultérieurement).
 
 
-## Mode production : Docker-compose
+## Lancer l'application en mode production
 
-Installez Docker-compose
-```
-sudo apt install docker-compose
-```
 
-Se placer dans le dossier deployment
-```
- cd deployment
-```
-Lancer le l'application avec docker-compose :
+1 - Mettre en place l'environnement 
 
-```
-docker-compose up -d
+```bash
+git clone https://github.com/AtelierSoude/OpenRepairPlatform.git
+cd OpenRepairPlatform
+touch .env
 ```
 
-Si vous *lancer* l'application pour la *première fois*, il vous faudra générer un *certificat* https *let'sencrypt*, afin de protéger les utilisateurs se connectant à votre site, au moyen du script situé ci-dessous (situé également dans le dossier deployment). Il génèra un certificat https en résolvant un challenge décrit par le protocole [acme](https://en.wikipedia.org/wiki/Automated_Certificate_Management_Environment). Il faut pour cela que vous ayez *configurer* au préalable votre *DNS* pour que le nom de domaine que vous ayez choisi (ex mon_super_atelier.fr) pointe sur l'adresse ip de votre machine, veillez à configurer une *entrée DNS ipv4 et ipv6*. Pour résoudre ce challenge, le *port 80* de votre machine doit être *exposé*. Il peut être bloquer par le firewall de votre machine et/ou d'un équipement réseau local (ex routeur), bien penser à autoriser le trafique ipv4 et ipv6. Il faudra veiller également à ouvrir le *port 443* pour permttre aux utilisateurs de se connecter à votre plateforme. 
+2 - Modifier le fichier .env 
 
-```
-./init-letsencrypt.sh
-```
+```bash
+#Contenu par défaut du fichier .env
+# Activé la recherche de localisation sur la page d'accueil
+LOCATION=1
 
-!!! Danger 
-    Attention, ce script n'est actuellement pas encore disponible. Vous pouvez cependant fournir un certificat let'sencrypt existant qui sera renouveler automatiquement
+# Paramètres DJANGO pour la configuration dev ou production 
+DJANGO_SETTINGS_MODULE=openrepairplatform.settings.dev
+SECRET_KEY=CHANGE_ME
 
-Toutes les données de l'application sont situées dans `./deployment/openrepairplatform_data`. Vous pouvez changer cela en éditant le fichier `./deployment/docker-compose.yml` 
+# Pour activer le mode debug, mettre la variable d'environement à True
+DEBUG=true
+PREPROD=True # !!! Pour empêcher les robots d'indexer. Changer à false en production
 
-Vous pouvez désormais naviguez sur le site via votre nom de domaine et passer au guide de premier lancement.
+#Paramètres de mail, uniquement en prod
+EMAIL_PASSWORD=CHANGE_ME
+EMAIL_HOST_USER=CHANGE_ME
+EMAIL_HOST=CHANGE_ME
+DEFAULT_FROM_EMAIL=no-reply@reparons.org
 
-## Mode développement : Environnement Virtuel 
+# Paramètre let's encrypt et nginx
+#Le domaine principale que django va utiliser
+DOMAINDNS=dev.reparons.org
+# Hôtes autorisés et variables pour docker
+# Some autorised hosts and vars are added for docker implementation
+DOMAINS=localhost 127.0.0.1 [::1]
+EMAIL=contact@atelier-soude.fr
+SERVER_CONTAINER=openrepairplatform_nginx
 
-**Pré-requis**
-
-Mettez à jour 
-```
-sudo apt update
-```
-
-Installez ces paquets 
-```
-sudo apt install python3-dev libpq-dev python3-pip postgresql postgresql-contrib libxml2-dev
-```
-
-**POSTGRES**
-
-Lancez postgres
-```
-postgres -d /usr/local/pgsql/data
-```
-Par défaut, en développement, l'application tente de se connecter à POSTGRES en utilisant le compte de l'utilisateur courant et sans mot de passe. C'est pourquoi les variables d'environnements **POSTGRES_USER & POSTGRES_PASSWORD** ne sont pas utilisées. 
-
-Créez la base de données (le même nom que celui entré dans le fichier .env)
-```
-createdb POSTGRES_DB_NAME -E utf-8
+# Paramètre postgres
+POSTGRES_USER=openrepairplatform
+POSTGRES_DBNAME=openrepairplatform
+POSTGRES_PASSWORD=mangerdespommes
 ```
 
-**Environnement virtuel et dépendances**
-Installez virtualenv 
-```
-pip install --user virtualenv
-```
+3 - Lancer l'application en mode production
 
-Créez un environnement virtual (dans le dossier racine)
-```
-virtualenv venv
-source bin/activate
-```
+Ce script va arrêter les services openrepairplatform et lancer l'application :
+1. obtenir le certificat pour le domaine en utilisant certbot/nginx
+2. build l'application
+3. lancer l'application
+4. exécuter les migrations
+5. lancer l'application
 
-Installez les dépendances PIP du projet 
+```bash
+sh ./install.prod.sh
 ```
-pip install -r requirements_dev.txt 
-```
-
-**Lancement de l'application**
-
-Premier lancement 
-```
-./manage.py migrate
-./manage.py createsuperuser
-./manage.py runserver
-```
-!!! info 
-    Pour lancer l'application vous devez systématiquement activer votre environnement virtuel au préalable.
-
-Ensuite, pour démarrer le service les prochaines fois (avec le serveur POSTGRES lancé)
-```
-./manage.py runserver
-```
-
-Vous pouvez désormais naviguer sur le site à l'adresse 127.0.0.1:8000 et passer au guide de premier lancement.
